@@ -2,8 +2,11 @@
   "name": "project_backend",
   "version": "1.0.0",
   "description": "Proyecto backend para Isi Global Solution",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
+    "dev": "ts-node-dev src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "JxviDev",
@@ -12,5 +15,8 @@
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "mysql2": "^3.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.15"
   }
 }
