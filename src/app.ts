@@ -3,6 +3,7 @@ import cors from "cors";
 import { saleRouter,saleByProductRouter,saleTotalRouter } from './routes/saleRoute.js'; 
 import { cardRouter } from './routes/cardRoute.js';
 import { chartRouter } from './routes/chartRoute.js';
+import { reportRouter } from './routes/reportRouter.js';
 
 const app = express();
 app.use(cors()); 
@@ -19,6 +20,8 @@ app.use('/api', cardRouter);
 
 // Chart routes
 app.use('/api', chartRouter);
+
+app.use('/api', reportRouter);
 
 
 export default app;
