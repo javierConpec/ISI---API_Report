@@ -1,15 +1,28 @@
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
 
-const pool = mysql.createPool({
+dotenv.config();
+
+const connection = mysql.createPool({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
 });
 
-module.exports = pool;
+async function testConnection() {
+  try {
+    const conn = await connection.getConnection();
+    console.log('Conectado a la BD con éxito :) japi');
+    conn.release(); //Esto va Liberar la conexión del pool (buscar)
+  } catch (error) {
+    console.error('Error en la conexión con la BD :(', error);
+  }
+}
+
+testConnection();
+
+export default connection;
+
