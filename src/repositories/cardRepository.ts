@@ -12,7 +12,7 @@ export async function getTotalAmount(): Promise<ItotalAmount> {
 
 export async function getTotalHoy(): Promise<ItotalHoy> {
     const [rows] = await connection.query(`
-        SELECT COUNT(*) AS totalHoy
+        SELECT SUM(Amount) AS totalHoy
         FROM transactions
             WHERE DATE(DateRegister) = CURDATE();
     `);
