@@ -21,10 +21,12 @@ export async function getReportGeneral(
       t.Volume AS volumen,
       t.Amount AS total
     FROM transactions t
-      INNER JOIN nozzles n ON t.NozzleId = n.Id
-      INNER JOIN products p ON n.ProductId = p.Id
-      INNER JOIN fuelpoints f ON n.FuelPointId = f.Id
-    WHERE 1 = 1
+    INNER JOIN nozzles n ON t.NozzleId = n.Id
+    INNER JOIN products p ON n.ProductId = p.Id
+    INNER JOIN fuelpoints f ON t.FuelPointId = f.Id
+    where 1=1
+
+    
   `;
 
   const params: any[] = [];
