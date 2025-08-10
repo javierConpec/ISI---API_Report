@@ -1,11 +1,9 @@
-import {getReportGeneral} from "../repositories/reporteRepository.js";
+import { getReporteContometro } from "../repositories/reporteRepository.js";
 
-export const ReportGeneralService = async (
-  fechaInicio?: string,
-  fechaFin?: string,
-  idProducto?: number,
+export const ReporteContometroService = async (
+  fecha: string,
   manguera?: number,
   puntoVenta?: number
 ) => {
-  return await getReportGeneral(fechaInicio, fechaFin, idProducto, manguera, puntoVenta);
+  return await getReporteContometro(fecha, manguera, puntoVenta);
 };

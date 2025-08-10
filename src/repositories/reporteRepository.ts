@@ -1,50 +1,57 @@
 import connection from "../config/connection.js";
-import {IReporteGeneral} from "../models/reporteModel.js"
-import { Request,Response } from "express";
+import {IReporteContometro} from "../models/reporteModel.js"
 
-export async function getReportGeneral(
+
+export async function getReporteContometro(
   fechaInicio?: string,
-  fechaFin?: string,
-  idProducto?: number,
   manguera?: number,
   puntoVenta?: number
-): Promise<IReporteGeneral[]> {
+): Promise<IReporteContometro[]> {
+  // Si no envían fecha, usar la fecha actual 
+  const fecha = fechaInicio ?? new Date().toISOString().slice(0, 10);
+
   let query = `
     SELECT 
-      t.DateRegister AS fecha,
-      p.InternalCode AS cod_producto,
-      p.Name AS producto,
-      n.NozzleNumber AS manguera,
-      f.LogicalNumber AS punto_venta,
-      t.UnitPrice AS precio,
-      p.CurrentPrice AS precio_actual,
-      t.Volume AS volumen,
-      t.Amount AS total
+        f.LogicalNumber AS surtidor,
+        p.Name AS producto, 
+        n.NozzleNumber AS manguera, 
+        p.CurrentPrice AS precio, 
+        SUM(t.Volume) AS cantidad, 
+        SUM(t.Amount) AS valor,
+        MAX(CASE WHEN DATE(t2.DateRegister) = DATE_SUB(?, INTERVAL 1 DAY) 
+                THEN t2.TotalDispensedVolume END) AS contometroInicial,
+        MAX(CASE WHEN DATE(t2.DateRegister) = ? 
+                THEN t2.TotalDispensedVolume END) AS contometroFinal,
+        MAX(CASE WHEN DATE(t2.DateRegister) = ? 
+                THEN t2.TotalDispensedVolume END)
+        - MAX(CASE WHEN DATE(t2.DateRegister) = DATE_SUB(?, INTERVAL 1 DAY) 
+                THEN t2.TotalDispensedVolume END) AS consumoReal
     FROM transactions t
-    INNER JOIN nozzles n ON t.NozzleId = n.Id
-    INNER JOIN products p ON n.ProductId = p.Id
-    INNER JOIN fuelpoints f ON t.FuelPointId = f.Id
-    where 1=1
-
-    
+    INNER JOIN fuelPoints f 
+        ON f.Id = t.FuelPointId
+    INNER JOIN nozzles n 
+        ON n.Id = t.NozzleId
+    INNER JOIN products p 
+        ON p.Id = n.ProductId
+    LEFT JOIN transactions t2
+        ON t2.FuelPointId = t.FuelPointId
+        AND t2.NozzleId = t.NozzleId
+        AND (
+            DATE(t2.DateRegister) = ? 
+            OR DATE(t2.DateRegister) = DATE_SUB(?, INTERVAL 1 DAY)
+        )
+    WHERE DATE(t.DateRegister) = ?
   `;
-
-  const params: any[] = [];
-
-  if (fechaInicio) {
-    query += ` AND t.DateRegister >= ?`;
-    params.push(fechaInicio);
-  }
-
-  if (fechaFin) {
-    query += ` AND t.DateRegister <= ?`;
-    params.push(fechaFin + " 23:59:59");
-  }
-
-  if (idProducto) {
-    query += ` AND p.Id = ?`;
-    params.push(idProducto);
-  }
+  const params: any[] = [
+    //Es una mejor práctica usar parámetros para evitar inyecciones SQL aunq podriamos añadir esto ( multipleStatements: true) en connection pero es mas riesgoso 
+    fechaInicio, // DATE_SUB 1
+    fechaInicio, // MAX final
+    fechaInicio, // MAX final
+    fechaInicio, // DATE_SUB 2
+    fechaInicio, // LEFT JOIN fecha
+    fechaInicio, // LEFT JOIN DATE_SUB
+    fechaInicio  // WHERE fecha
+  ];
 
   if (manguera) {
     query += ` AND n.NozzleNumber = ?`;
@@ -56,8 +63,11 @@ export async function getReportGeneral(
     params.push(puntoVenta);
   }
 
-  query += ` ORDER BY t.DateRegister DESC`;
+  query += `
+    GROUP BY surtidor, producto, manguera, precio
+    ORDER BY surtidor, manguera
+  `;
 
   const [rows] = await connection.query(query, params);
-  return Array.isArray(rows) ? (rows as IReporteGeneral[]) : [];
+  return Array.isArray(rows) ? (rows as IReporteContometro[]) : [];
 }
