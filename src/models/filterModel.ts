@@ -12,3 +12,7 @@ export interface ImangueraFilter{
   id:number
   numberNozzle:number;
 } 
+
+export interface IDateCloseFilter{
+  DateClose:string;
+}
