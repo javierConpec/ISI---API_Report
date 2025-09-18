@@ -11,7 +11,7 @@ export interface IVentaPorProdcuto {
 
 export interface chartNozzle {
     nozzleNumber: number;
-    fuelPoint: number;
+    LogicalNumber: number;
     product: string;
     totalVolume: number;
 }
