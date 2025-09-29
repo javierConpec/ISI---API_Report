@@ -1,5 +1,12 @@
 import { Response, Request } from "express";
-import { ReporteContometroService, ReporteTransaccionesService,ReportNozzleService,ReportProductService} from "../services/reporteService.js";
+import { ReporteContometroService, ReporteTransaccionesConIAService, ReporteTransaccionesService,ReportNozzleService,ReportProductService} from "../services/reporteService.js";
+import OpenAI from 'openai';
+
+// Configuración del cliente OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 
 export const getReporteContometroController = async (req: Request, res: Response) => {
   try {
@@ -36,6 +43,37 @@ export const getReporteContometroController = async (req: Request, res: Response
   } catch (error) {
     console.error("Error fetching reporte contometro:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getReporteTransaccionesConIA = async (req: Request, res: Response) => {
+  try {
+    const { fechaInicio, fechaFin, horaInicio, horaFin, manguera, puntoVenta, dateClose } = req.query;
+
+    // 1️Traemos los datos y el prompt desde el service
+    const { data, prompt } = await ReporteTransaccionesConIAService(
+      fechaInicio as string,
+      fechaFin as string,
+      horaInicio as string,
+      horaFin as string,
+      manguera ? Number(manguera) : undefined,
+      puntoVenta ? Number(puntoVenta) : undefined,
+      dateClose as string
+    );
+
+    // 2️ Llamamos a OpenAI con el prompt
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const insight = completion.choices[0].message?.content || "No se pudo generar insight";
+
+    // 3️ Retornamos los datos y el insight al frontend
+    res.json({ data, insight });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error generando reporte con IA" });
   }
 };
 
